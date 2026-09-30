@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interface Technician: ทางเลือกของช่าง</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: "Segoe UI", Tahoma, sans-serif;
+    background: linear-gradient(135deg,#101827,#172b45);
+    color: #eef5ff; min-height: 100vh;
+  }
+  .wrap { max-width: 1050px; margin: auto; padding: 28px 18px 50px; }
+  header {
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+    border-radius: 22px; padding: 24px; box-shadow: 0 18px 50px rgba(0,0,0,.25);
+  }
+  h1 { margin: 0 0 8px; font-size: clamp(28px,5vw,44px); }
+  .subtitle { color:#b9cce4; line-height:1.6; }
+  .progress { display:flex; gap:8px; margin-top:18px; }
+  .dot { height:8px; flex:1; border-radius:8px; background:#33465e; }
+  .dot.active { background:#63d8ff; }
+  .grid { display:grid; grid-template-columns: 1.45fr .8fr; gap:18px; margin-top:18px; }
+  .card {
+    background:#f8fbff; color:#162236; border-radius:20px; padding:24px;
+    box-shadow: 0 15px 40px rgba(0,0,0,.22);
+  }
+  .scenario { border-left:5px solid #36b9e9; }
+  .tag { display:inline-block; padding:6px 10px; border-radius:999px; background:#dff6ff; color:#087ba4; font-weight:700; font-size:13px; }
+  h2 { margin:12px 0 8px; }
+  .equipment { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 20px; }
+  .equip { background:#e9eef5; padding:8px 11px; border-radius:10px; font-size:14px; }
+  .choice {
+    width:100%; text-align:left; border:2px solid #dce5ef; background:white;
+    border-radius:14px; padding:15px; margin:8px 0; cursor:pointer;
+    transition:.18s; font-size:16px; color:#172236;
+  }
+  .choice:hover { border-color:#36b9e9; transform:translateY(-1px); }
+  .choice.correct { border-color:#24a36a; background:#eafaf2; }
+  .choice.wrong { border-color:#dc5a5a; background:#fff0f0; }
+  .feedback { margin-top:16px; padding:15px; border-radius:14px; display:none; line-height:1.6; }
+  .feedback.show { display:block; }
+  .feedback.wrong { background:#fff0f0; color:#8d2727; }
+  .feedback.correct { background:#eafaf2; color:#126b47; }
+  .hint { margin-top:7px; font-size:14px; }
+  .next, .restart {
+    border:0; border-radius:12px; padding:12px 18px; font-weight:700; cursor:pointer;
+    margin-top:12px;
+  }
+  .next { background:#167ca6; color:white; }
+  .restart { background:#24354c; color:white; }
+  .evidence { background:#111e30; color:#eaf4ff; }
+  .evidence h3 { margin-top:0; }
+  .log { min-height:150px; color:#b9cce4; font-size:14px; line-height:1.7; }
+  .status {
+    padding:14px; border-radius:14px; background:#1b2d44; margin-top:14px;
+    border:1px solid #304760;
+  }
+  .success {
+    background:linear-gradient(135deg,#123e35,#17634e); border:1px solid #2d9b78;
+    color:white; text-align:center; padding:28px; border-radius:18px; margin-top:18px;
+  }
+  .hidden { display:none; }
+  .reason { font-size:13px; color:#5c6d80; margin-top:6px; }
+  @media(max-width:800px){ .grid{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🔧 Interface Technician</h1>
+    <div class="subtitle">ทางเลือกของช่าง — ภารกิจ: สร้างระบบ “กดปุ่มแล้วไฟ LED ติด”</div>
+    <div class="progress" aria-label="ความคืบหน้า">
+      <div class="dot active" id="dot1"></div><div class="dot" id="dot2"></div><div class="dot" id="dot3"></div>
+    </div>
+  </header>
+
+  <div id="game" class="grid">
+    <main class="card scenario">
+      <span class="tag" id="stepTag">จุดตัดสินใจที่ 1</span>
+      <h2 id="question"></h2>
+      <p id="description"></p>
+      <div class="equipment" id="equipment"></div>
+      <div id="choices"></div>
+      <div id="feedback" class="feedback"></div>
+      <button id="nextBtn" class="next hidden">ไปยังขั้นตอนถัดไป →</button>
+    </main>
+
+    <aside class="card evidence">
+      <h3>📋 Learning Evidence</h3>
+      <p>เส้นทางการตัดสินใจและเหตุผลในการเลือก</p>
+      <div class="log" id="log">ยังไม่มีการตัดสินใจ</div>
+      <div class="status" id="status">ภารกิจ: กำลังวิเคราะห์ระบบ</div>
+    </aside>
+  </div>
+
+  <div id="success" class="success hidden">
+    <h2>🎉 ภารกิจสำเร็จ!</h2>
+    <p>คุณเลือกเส้นทางที่ถูกต้องครบทุกขั้นตอน ระบบ “กดปุ่มแล้วไฟ LED ติด” ทำงานตามลำดับ</p>
+    <p><strong>Learning Evidence:</strong> คุณระบุ Input, อธิบายลำดับการเชื่อมต่อ และใช้หลักการตรวจสอบสาย/ขั้วต่อเมื่อเกิดปัญหาได้ถูกต้อง</p>
+    <button class="restart" onclick="restart()">🔄 เล่นอีกครั้ง</button>
+  </div>
+</div>
+
+<script>
+const steps = [
+  {
+    q: "เลือกอุปกรณ์ Input สำหรับระบบนี้",
+    desc: "Input คืออุปกรณ์ที่ส่งข้อมูลหรือคำสั่งเข้าสู่ระบบ เพื่อบอก Controller ว่าผู้ใช้ได้สั่งงานแล้ว",
+    eq: ["Switch","LED","Computer / Controller","Interface","Communication Port"],
+    options: ["LED","Switch","Computer","Relay"],
+    correct: 1,
+    consequence: "LED เป็นอุปกรณ์แสดงผล จึงทำหน้าที่ Output ไม่ใช่ตัวรับคำสั่งจากผู้ใช้",
+    hint: "Hint: ลองคิดว่าอุปกรณ์ใดเป็นตัวที่ผู้ใช้ “กด” เพื่อส่งคำสั่งเข้าสู่ระบบ"
+  },
+  {
+    q: "เลือกลำดับการทำงานของระบบที่ถูกต้อง",
+    desc: "เมื่อผู้ใช้กด Switch สัญญาณต้องเดินทางผ่าน Interface ไปยัง Controller แล้วจึงส่งคำสั่งกลับไปยัง LED",
+    eq: ["Switch","Interface","Computer / Controller","Interface","LED"],
+    options: [
+      "LED → Switch → Computer",
+      "Switch → Interface → Computer/Controller → Interface → LED",
+      "Computer → LED → Switch",
+      "Interface → LED → Switch"
+    ],
+    correct: 1,
+    consequence: "ลำดับนี้ไม่ทำให้คำสั่งจาก Switch เดินทางไปยัง Controller และส่งผลกลับไปควบคุม LED อย่างถูกต้อง",
+    hint: "Hint: เริ่มจาก Input → Interface → Controller → Interface → Output"
+  },
+  {
+    q: "ถ้ากด Switch แล้ว LED ไม่ติด ควรตรวจสอบอะไรก่อน?",
+    desc: "ช่างควรตรวจสอบสาเหตุพื้นฐานของการเชื่อมต่อก่อนเปลี่ยนอุปกรณ์หรือปิดระบบ",
+    eq: ["Switch","LED","สายสัญญาณ","ขั้วต่อ","Interface"],
+    options: ["เปลี่ยน LED ทันที","ตรวจสายและขั้วต่อ","ปิดคอมพิวเตอร์","เปลี่ยน Motor"],
+    correct: 1,
+    consequence: "การเปลี่ยนอุปกรณ์ทันทีอาจทำให้แก้ปัญหาไม่ตรงจุด ควรตรวจการเชื่อมต่อพื้นฐานก่อน",
+    hint: "Hint: ตรวจสิ่งที่ง่ายและเกี่ยวข้องกับเส้นทางสัญญาณก่อน เช่น สายและขั้วต่อ"
+  }
+];
+
+let current = 0;
+let evidence = [];
+let answered = false;
+
+function render() {
+  const s = steps[current];
+  document.getElementById("stepTag").textContent = `จุดตัดสินใจที่ ${current+1}`;
+  document.getElementById("question").textContent = s.q;
+  document.getElementById("description").textContent = s.desc;
+  document.getElementById("equipment").innerHTML = s.eq.map(x => `<span class="equip">${x}</span>`).join("");
+  document.getElementById("feedback").className = "feedback";
+  document.getElementById("feedback").innerHTML = "";
+  document.getElementById("nextBtn").classList.add("hidden");
+  answered = false;
+
+  document.getElementById("choices").innerHTML = s.options.map((x,i) =>
+    `<button class="choice" onclick="choose(${i})">${String.fromCharCode(65+i)}. ${x}</button>`
+  ).join("");
+
+  for(let i=1;i<=3;i++) document.getElementById("dot"+i).classList.toggle("active", i<=current+1);
+  updateLog();
+}
+
+function choose(index) {
+  if (answered) return;
+  const s = steps[current];
+  const buttons = [...document.querySelectorAll(".choice")];
+  const fb = document.getElementById("feedback");
+
+  if(index === s.correct) {
+    answered = true;
+    buttons[index].classList.add("correct");
+    fb.className = "feedback correct show";
+    fb.innerHTML = `✅ <strong>ถูกต้อง!</strong><br>คุณเลือก “${s.options[index]}” เพราะสอดคล้องกับบทบาทของอุปกรณ์ในระบบ`;
+    evidence.push(`จุดที่ ${current+1}: เลือก “${s.options[index]}” ✓ เหตุผล: ${reason(current)}`);
+    document.getElementById("nextBtn").classList.remove("hidden");
+    document.getElementById("nextBtn").textContent = current === 2 ? "ดูผลภารกิจ →" : "ไปยังขั้นตอนถัดไป →";
+    updateLog();
+  } else {
+    buttons[index].classList.add("wrong");
+    fb.className = "feedback wrong show";
+    fb.innerHTML = `❌ <strong>ยังไม่ถูกต้อง</strong><br>${s.consequence}<div class="hint">💡 ${s.hint}</div><button class="next" onclick="retry()">ลองเลือกใหม่</button>`;
+    evidence.push(`จุดที่ ${current+1}: เลือก “${s.options[index]}” ✗ → ${s.hint}`);
+    updateLog();
+  }
+}
+
+function reason(i) {
+  return [
+    "Switch เป็น Input ที่รับคำสั่งจากผู้ใช้",
+    "สัญญาณเดินจาก Input ผ่าน Interface ไปยัง Controller และกลับผ่าน Interface ไปยัง Output",
+    "การตรวจสายและขั้วต่อเป็นการตรวจสอบการเชื่อมต่อพื้นฐานก่อนเปลี่ยนอุปกรณ์"
+  ][i];
+}
+
+function retry() {
+  const fb = document.getElementById("feedback");
+  fb.className = "feedback";
+  document.querySelectorAll(".choice").forEach(b => b.classList.remove("wrong"));
+}
+
+document.getElementById("nextBtn").onclick = () => {
+  if(current < 2) {
+    current++;
+    render();
+  } else {
+    document.getElementById("game").classList.add("hidden");
+    document.getElementById("success").classList.remove("hidden");
+  }
+};
+
+function updateLog() {
+  document.getElementById("log").innerHTML = evidence.length
+    ? evidence.map((x,i)=>`<div>${i+1}. ${x}</div>`).join("")
+    : "ยังไม่มีการตัดสินใจ";
+  document.getElementById("status").textContent =
+    `ภารกิจ: ผ่าน ${Math.min(current,3)} / 3 ขั้นตอน${current===2 && answered ? " — พร้อมสรุปผล" : ""}`;
+}
+
+function restart() {
+  current = 0; evidence = []; answered = false;
+  document.getElementById("success").classList.add("hidden");
+  document.getElementById("game").classList.remove("hidden");
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

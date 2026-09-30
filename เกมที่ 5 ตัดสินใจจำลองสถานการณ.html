@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interface Technician Simulator</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#07121d;color:#edf8ff;font-family:Arial,"Noto Sans Thai",sans-serif}
+.wrap{max-width:960px;margin:auto;padding:24px}.top,.panel{background:#0d1e2d;border:1px solid #25455c;border-radius:18px;padding:24px;box-shadow:0 12px 30px #0006}
+h1{margin:0;color:#57d7ff;font-size:34px}h2{color:#7ee6ff}.sub{color:#a8bdca}
+.status{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.pill{background:#17344a;padding:9px 14px;border-radius:20px}.credit{color:#62ffd0}
+.bar{height:10px;background:#172b3b;border-radius:20px;margin-top:18px;overflow:hidden}.fill{height:100%;width:0;background:#43d8ff;transition:.35s}
+.panel{margin-top:18px}.scenario{background:#10283a;padding:16px;border-radius:12px;line-height:1.7}
+.option{display:block;width:100%;padding:16px;margin:10px 0;background:#142c40;color:#fff;border:1px solid #34556c;border-radius:12px;text-align:left;font-size:16px;cursor:pointer}
+.option:hover{background:#1c3d55}.option:disabled{cursor:default}.correct{background:#124d42!important;border-color:#45e0ae!important}.wrong{background:#542b38!important;border-color:#ff7185!important}
+.feedback{margin-top:16px;padding:16px;border-radius:12px;line-height:1.65}.good{background:#0f4137}.bad{background:#492633}.hint{background:#293c28;border:1px solid #617c4c}
+.next{padding:13px 22px;border:0;border-radius:10px;background:#43d8ff;color:#06121b;font-weight:bold;cursor:pointer;margin-top:14px}
+.hidden{display:none}.center{text-align:center}.big{font-size:60px}.danger{color:#ff8190}.green{color:#62ffd0}
+ul{line-height:1.9}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top">
+<h1>🔧 Interface Technician Simulator</h1>
+<p class="sub">เกมตัดสินใจจำลองสถานการณ์ • คุณคือช่างเทคนิคคอมพิวเตอร์</p>
+<div class="status">
+<span class="pill">ขั้นที่ <b id="step">1</b>/3</span>
+<span class="pill">⏱️ เวลา: <b id="time">0</b> วินาที</span>
+<span class="pill credit">💳 เครดิต: <b id="credit">3</b></span>
+</div>
+<div class="bar"><div class="fill" id="fill"></div></div>
+</div>
+
+<div id="game" class="panel">
+<h2 id="title">📋 รับแจ้งปัญหา</h2>
+<div class="scenario" id="scenario"></div>
+<div id="choices"></div>
+<div id="feedback"></div>
+</div>
+
+<div id="complete" class="panel hidden center">
+<div class="big">💡✨</div>
+<h2 class="green">MISSION COMPLETE!</h2>
+<p>คุณแก้ไขปัญหาได้สำเร็จ</p>
+<p><b>LED ติด → ระบบทำงานตามปกติ</b></p>
+<p>เครดิตคงเหลือ: <b id="finalCredit"></b></p>
+<h3>📚 Learning Evidence</h3>
+<p>ผู้เรียนได้ฝึกวิเคราะห์อาการ → เลือกจุดตรวจสอบ → แก้การเชื่อมต่อ → ตรวจสอบวงจร/โปรแกรม และเห็นผลลัพธ์ของการตัดสินใจ</p>
+<button class="next" onclick="location.reload()">🔄 เริ่มภารกิจใหม่</button>
+</div>
+
+<div id="failed" class="panel hidden center">
+<div class="big">⚠️</div>
+<h2 class="danger">เครดิตหมด</h2>
+<p>การตัดสินใจที่ไม่ตรงจุดทำให้เสียเวลาและเครดิต</p>
+<p>ลองเริ่มภารกิจใหม่ แล้ววิเคราะห์จากข้อมูลที่มีอีกครั้ง</p>
+<button class="next" onclick="location.reload()">🔄 เริ่มใหม่</button>
+</div>
+</div>
+
+<script>
+let step=1,credit=3,time=0,timer=setInterval(()=>{time++;document.getElementById('time').textContent=time},1000);
+
+const data={
+1:{
+ title:"🔎 ขั้นที่ 1 — เลือกสิ่งที่จะตรวจ",
+ scenario:`<b>อาการ:</b> ระบบกดปุ่มแล้ว LED ไม่ติด<br>
+<b>ข้อมูล:</b> Computer เปิดอยู่ • Program ทำงาน • Switch สามารถกดได้ • LED ไม่ติด • สายบางจุดอาจต่อผิด`,
+ options:[
+ ["A. ตรวจสอบสายและขั้วต่อ",true,"ถูกต้อง! เมื่อ Computer และ Program ทำงาน แต่ LED ไม่ติด ควรเริ่มจากจุดเชื่อมต่อที่อาจต่อผิด"],
+ ["B. เปลี่ยน Computer",false,"เปลี่ยนอุปกรณ์หลักทั้งที่ Computer เปิดและ Program ทำงานอยู่ ทำให้เสียเวลาโดยไม่จำเป็น"],
+ ["C. เปลี่ยน Mouse",false,"Mouse ไม่เกี่ยวข้องกับเส้นทางการควบคุม LED ในสถานการณ์นี้"],
+ ["D. เพิ่ม Memory",false,"Memory ไม่ใช่จุดต้องสงสัยหลัก เพราะ Program กำลังทำงานตามปกติ"]
+ ]},
+2:{
+ title:"🔧 ขั้นที่ 2 — แก้ปัญหาการเชื่อมต่อ",
+ scenario:`ผลการตรวจสอบพบว่า <b>สาย LED ต่อผิดขั้ว</b><br>คุณควรทำอะไรต่อเพื่อแก้ปัญหา?`,
+ options:[
+ ["A. เปลี่ยน Motor",false,"Motor ไม่ใช่อุปกรณ์ที่พบปัญหา"],
+ ["B. แก้การเชื่อมต่อ",true,"ถูกต้อง! เมื่อพบว่าสาย LED ต่อผิดขั้ว ควรแก้การเชื่อมต่อให้ถูกต้อง"],
+ ["C. ปิดโปรแกรม",false,"การปิด Program ไม่ได้แก้ปัญหาการต่อสายผิดขั้ว"],
+ ["D. เปลี่ยน Keyboard",false,"Keyboard ไม่เกี่ยวข้องกับปัญหาที่พบ"]
+ ]},
+3:{
+ title:"🧪 ขั้นที่ 3 — ตรวจสอบต่อหลังแก้สาย",
+ scenario:`หลังแก้การเชื่อมต่อแล้ว <b>LED ยังไม่ติด</b><br>คุณควรวิเคราะห์อะไรต่อ?`,
+ options:[
+ ["A. ตรวจสอบวงจรและโปรแกรม",true,"ถูกต้อง! เมื่อการเชื่อมต่อถูกแล้ว ต้องตรวจสอบทั้งวงจรและโปรแกรมเพื่อหาสาเหตุที่เหลือ"],
+ ["B. เปลี่ยน Sensor",false,"ยังไม่มีหลักฐานว่า Sensor เป็นสาเหตุ"],
+ ["C. เปลี่ยน Switch",false,"Switch สามารถกดได้ จึงยังไม่มีเหตุผลให้เปลี่ยนทันที"],
+ ["D. ถอด Computer",false,"Computer และ Program ทำงานอยู่ การถอดออกไม่ใช่ขั้นตอนที่เหมาะสม"]
+ ]}
+};
+
+function render(){
+ document.getElementById('step').textContent=step;
+ document.getElementById('credit').textContent=credit;
+ document.getElementById('fill').style.width=((step-1)/3*100)+"%";
+ const d=data[step];
+ document.getElementById('title').textContent=d.title;
+ document.getElementById('scenario').innerHTML=d.scenario;
+ document.getElementById('feedback').innerHTML="";
+ const box=document.getElementById('choices');box.innerHTML="";
+ d.options.forEach((o,i)=>{
+   const b=document.createElement('button');b.className="option";b.textContent=o[0];
+   b.onclick=()=>choose(b,o);box.appendChild(b);
+ });
+}
+function choose(btn,o){
+ document.querySelectorAll('.option').forEach(x=>x.disabled=true);
+ const f=document.getElementById('feedback');
+ if(o[1]){
+   btn.classList.add('correct');
+   f.className="feedback good";
+   f.innerHTML="✅ <b>ตัดสินใจถูกต้อง</b><br>"+o[2];
+   if(step<3){
+     f.innerHTML+="<br><button class='next' onclick='nextStep()'>ไปขั้นถัดไป →</button>";
+   }else{
+     clearInterval(timer);
+     f.innerHTML+="<br><button class='next' onclick='finish()'>ทดสอบระบบ →</button>";
+   }
+ }else{
+   btn.classList.add('wrong');credit--;document.getElementById('credit').textContent=credit;
+   f.className="feedback bad";
+   f.innerHTML="❌ <b>ตัดสินใจไม่ตรงจุด</b><br>"+o[2]+
+   "<br><br>📉 <b>Consequence:</b> เสียเวลาและ 1 เครดิต"+
+   "<div class='feedback hint'>💡 <b>Hint:</b> จากข้อมูลที่มี ให้เลือกสิ่งที่เกี่ยวข้องโดยตรงกับอาการ และหลีกเลี่ยงการเปลี่ยนอุปกรณ์ที่ยังไม่มีหลักฐานว่าเสีย</div>"+
+   (credit>0?"<button class='next' onclick='analyzeAgain()'>วิเคราะห์ใหม่ ↻</button>":"");
+   if(credit<=0){setTimeout(()=>{document.getElementById('game').classList.add('hidden');document.getElementById('failed').classList.remove('hidden')},600)}
+ }
+}
+function analyzeAgain(){render()}
+function nextStep(){step++;render()}
+function finish(){
+ document.getElementById('game').classList.add('hidden');
+ document.getElementById('complete').classList.remove('hidden');
+ document.getElementById('finalCredit').textContent=credit;
+ document.getElementById('fill').style.width="100%";
+}
+render();
+</script>
+</body>
+</html>

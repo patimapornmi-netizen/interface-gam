@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escape from the Broken Lab</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,"Tahoma",sans-serif;background:linear-gradient(135deg,#07111f,#111827);color:#e5eefc;min-height:100vh}
+.game{max-width:900px;margin:auto;padding:24px}
+.header{background:#0d1b2a;border:1px solid #26384d;border-radius:20px;padding:24px;margin-bottom:18px;box-shadow:0 15px 40px #0005}
+h1{margin:0 0 8px;font-size:32px;color:#67e8f9}
+.subtitle{color:#a9b9cc;line-height:1.6}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.stat{background:#111f30;border:1px solid #30445b;border-radius:12px;padding:9px 13px;font-weight:bold}
+.card{background:#0d1b2a;border:1px solid #26384d;border-radius:20px;padding:24px;box-shadow:0 15px 40px #0005}
+.mission{color:#67e8f9;font-size:13px;font-weight:bold;letter-spacing:1.5px}
+h2{margin:7px 0 12px;font-size:25px}
+.story{line-height:1.7;color:#d4deea}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+button{border:1px solid #344b63;background:#14263a;color:#edf6ff;border-radius:13px;padding:15px;min-height:55px;font-size:15px;font-weight:bold;cursor:pointer;text-align:left;transition:.18s}
+button:hover{transform:translateY(-2px);border-color:#67e8f9;background:#19334b}
+button:disabled{opacity:.55;cursor:default;transform:none}
+.primary{background:#0e7490;border-color:#67e8f9}
+.feedback{margin-top:18px;padding:15px;border-radius:13px;background:#101e2e;border:1px solid #30445b;line-height:1.6}
+.success{border-color:#34d399;background:#0b2b27}
+.error{border-color:#fb7185;background:#321722}
+.progress{height:8px;background:#18283a;border-radius:20px;overflow:hidden;margin-top:18px}
+.bar{height:100%;width:0;background:#22d3ee;transition:.35s}
+.center{text-align:center}
+.big{font-size:70px;margin:15px}
+.restart{margin-top:18px;width:100%;text-align:center}
+.restart button{text-align:center}
+@media(max-width:600px){.game{padding:12px}.options{grid-template-columns:1fr}h1{font-size:26px}}
+</style>
+</head>
+<body>
+<div class="game">
+<header class="header">
+<h1>🧪 Escape from the Broken Lab</h1>
+<div class="subtitle">คุณถูกล็อกอยู่ในห้องปฏิบัติการคอมพิวเตอร์ แก้ระบบ Interface ให้สำเร็จเพื่อเปิดประตูหนีออกมา!</div>
+<div class="stats">
+<div class="stat">🎯 คะแนน: <span id="score">0</span>/100</div>
+<div class="stat">🔑 <span id="key1">Key Card 1 🔒</span></div>
+<div class="stat">🔑 <span id="key2">Key Card 2 🔒</span></div>
+</div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+</header>
+
+<main class="card">
+<div id="game"></div>
+<div id="feedback" class="feedback">เลือกคำตอบเพื่อเริ่มภารกิจ</div>
+<div class="restart"><button class="primary" id="restart">↻ เริ่มเกมใหม่</button></div>
+</main>
+</div>
+
+<script>
+const game=document.getElementById("game");
+const feedback=document.getElementById("feedback");
+const scoreEl=document.getElementById("score");
+const key1=document.getElementById("key1");
+const key2=document.getElementById("key2");
+const bar=document.getElementById("bar");
+
+let mission=1,score=0,hasKey1=false,hasKey2=false;
+
+const data={
+1:{
+title:"MISSION 1 — IDENTIFY",
+text:"🔍 หา Input Device จำนวน 2 ชิ้นจากอุปกรณ์ต่อไปนี้",
+options:[
+["🔘 Switch","input"],
+["💡 LED","wrong"],
+["🌡️ Temperature Sensor","input"],
+["⚙️ DC Motor","wrong"]
+]},
+2:{
+title:"MISSION 2 — CONNECT",
+text:"🔗 เรียงลำดับระบบให้ถูกต้อง",
+options:[
+["A. Input → Interface → Computer/Controller → Interface → Output","correct"],
+["B. Output → Interface → Input → Computer/Controller → Interface","wrong"],
+["C. Computer/Controller → Input → Output → Interface → Interface","wrong"],
+["D. Interface → Output → Computer/Controller → Input → Interface","wrong"]
+]},
+3:{
+title:"MISSION 3 — REPAIR",
+text:"🛠️ Computer มองไม่เห็นอุปกรณ์ คุณควรทำอะไรเป็นอันดับแรก?",
+options:[
+["1. 🔌 ตรวจสอบ Interface / Port","correct"],
+["2. 💡 เปลี่ยน LED","wrong"],
+["3. ⚙️ เปลี่ยน Motor","wrong"],
+["4. 🌡️ เพิ่ม Sensor","wrong"]
+]},
+4:{
+title:"FINAL MISSION — ESCAPE",
+text:"🚪 เลือกการเชื่อมต่อที่ถูกต้องเพื่อปลดล็อกประตู",
+options:[
+["A. Switch → Interface → Computer/Controller → Interface → LED","final"],
+["B. LED → Interface → Computer/Controller → Interface → Switch","wrong"],
+["C. Switch → Computer/Controller → LED → Interface","wrong"],
+["D. Interface → Switch → LED → Computer/Controller","wrong"]
+]}
+};
+
+function render(){
+const d=data[mission];
+game.innerHTML=`
+<div class="mission">${d.title}</div>
+<h2>${d.title==="FINAL MISSION — ESCAPE"?"🚨 Final Security Check":"ภารกิจของคุณ"}</h2>
+<p class="story">${d.text}</p>
+<div class="options">${d.options.map((x,i)=>`<button data-answer="${x[1]}" data-index="${i}">${x[0]}</button>`).join("")}</div>`;
+document.querySelectorAll(".options button").forEach(b=>b.addEventListener("click",answer));
+feedback.className="feedback";
+feedback.textContent="เลือกคำตอบเพื่อดำเนินภารกิจ";
+update();
+}
+
+function update(){
+scoreEl.textContent=score;
+key1.textContent=hasKey1?"Key Card 1 ✅":"Key Card 1 🔒";
+key2.textContent=hasKey2?"Key Card 2 ✅":"Key Card 2 🔒";
+bar.style.width=((mission-1)/4*100)+"%";
+}
+
+function answer(e){
+const btn=e.currentTarget;
+const type=btn.dataset.answer;
+
+if(mission===1){
+ if(type==="input"){
+   btn.disabled=true;
+   btn.classList.add("primary");
+   btn.dataset.found="yes";
+   const found=document.querySelectorAll('[data-found="yes"]').length;
+   if(found===1){
+     feedback.className="feedback success";
+     feedback.textContent="✅ ถูกต้อง! คุณพบ Input แล้ว 1 ชิ้น — หาอีก 1 ชิ้น";
+   }else{
+     score=20; hasKey1=true;
+     feedback.className="feedback success";
+     feedback.textContent="🔓 ถูกต้อง! พบ Input ครบ 2 ชิ้น — ได้ Key Card 1";
+     setTimeout(()=>{mission=2;render()},900);
+   }
+ }else{
+   score=Math.max(0,score-5);
+   feedback.className="feedback error";
+   feedback.textContent="❌ อุปกรณ์นี้ไม่ใช่ Input Device ลองใหม่";
+ }
+}
+else if(mission===2){
+ if(type==="correct"){
+   score=50;hasKey2=true;
+   feedback.className="feedback success";
+   feedback.textContent="🔓 ระบบเชื่อมต่อถูกต้อง — ได้ Key Card 2!";
+   setTimeout(()=>{mission=3;render()},900);
+ }else wrong();
+}
+else if(mission===3){
+ if(type==="correct"){
+   score=70;
+   feedback.className="feedback success";
+   feedback.textContent="🔧 พบจุดผิดปกติที่ Interface / Port ระบบกลับมาออนไลน์!";
+   setTimeout(()=>{mission=4;render()},900);
+ }else wrong();
+}
+else if(mission===4){
+ if(type==="final"){
+   score=100;
+   bar.style.width="100%";
+   scoreEl.textContent=score;
+   game.innerHTML=`
+   <div class="center">
+   <div class="big">🚪🔓</div>
+   <div class="mission">MISSION COMPLETE</div>
+   <h2>ประตูเปิดแล้ว!</h2>
+   <p class="story">คุณซ่อมระบบ Interface สำเร็จ และหนีออกจาก Broken Lab ได้!</p>
+   <h2>🏆 คะแนนสุดท้าย: 100/100</h2>
+   <p class="story">คุณสามารถจำแนกอุปกรณ์ เรียงลำดับ Interface วิเคราะห์ปัญหา และเลือกวิธีแก้ไขได้สำเร็จ</p>
+   </div>`;
+   feedback.className="feedback success";
+   feedback.textContent="🟢 SYSTEM ONLINE • 🟢 INTERFACE CONNECTED • 🟢 DOOR UNLOCKED";
+ }else wrong();
+}
+update();
+}
+
+function wrong(){
+score=Math.max(0,score-5);
+feedback.className="feedback error";
+feedback.textContent="❌ ยังไม่ถูกต้อง ลองวิเคราะห์ระบบอีกครั้ง";
+update();
+}
+
+document.getElementById("restart").addEventListener("click",()=>{
+mission=1;score=0;hasKey1=false;hasKey2=false;render();
+});
+
+render();
+</script>
+</body>
+</html>
